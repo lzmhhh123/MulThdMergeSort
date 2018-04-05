@@ -23,7 +23,8 @@ public:
     MulThdMgSort(size_t len, T *array);
     ~MulThdMgSort(){}
 
-    void sort();
+    void sortByNewMg();
+    void sortByOldMg();
     void print();
     int getLength();
 };
@@ -112,7 +113,7 @@ void oldMerge(void* info) {
 }
 
 template<class T>
-void* mergeSort(void* info) {
+void* mergeSortByNewMg(void* info) {
     auto arg = (mInfo<std::vector<T> >*)(info);
     int l = arg->l, r = arg->r;
     int mid = (l + r) >> 1;
@@ -127,16 +128,12 @@ void* mergeSort(void* info) {
     pthread_t tid1, tid2;
     auto info1 = mInfo<std::vector<T>>(l, mid, v);
     auto info2 = mInfo<std::vector<T>>(mid, r, v);
-    pthread_create(&tid1, NULL, mergeSort<T>, (void*) &info1);
-    pthread_create(&tid2, NULL, mergeSort<T>, (void*) &info2);
+    pthread_create(&tid1, NULL, mergeSortByNewMg<T>, (void*) &info1);
+    pthread_create(&tid2, NULL, mergeSortByNewMg<T>, (void*) &info2);
 
     void *status1, *status2;
     pthread_join(tid1, &status1);
     pthread_join(tid2, &status2);
-
-    // old merge algorithm O(n), single thread
-
-    // oldMerge<T>(info);
 
     // new merge algorithm O(nlogn), multiple threads
     pthread_t sid;
@@ -146,11 +143,50 @@ void* mergeSort(void* info) {
     
 }
 
+
 template<class T>
-void MulThdMgSort<T>::sort() {
+void* mergeSortByOldMg(void* info) {
+    auto arg = (mInfo<std::vector<T> >*)(info);
+    int l = arg->l, r = arg->r;
+    int mid = (l + r) >> 1;
+    auto &v = arg->v;
+    if (r - l == 1) {
+        return NULL;
+    } else if (r - l == 2) {
+        if (v[l] > v[l + 1]) std::swap(v[l], v[l + 1]);
+        return NULL;
+    }
+
+    pthread_t tid1, tid2;
+    auto info1 = mInfo<std::vector<T>>(l, mid, v);
+    auto info2 = mInfo<std::vector<T>>(mid, r, v);
+    pthread_create(&tid1, NULL, mergeSortByOldMg<T>, (void*) &info1);
+    pthread_create(&tid2, NULL, mergeSortByOldMg<T>, (void*) &info2);
+
+    void *status1, *status2;
+    pthread_join(tid1, &status1);
+    pthread_join(tid2, &status2);
+
+    // old merge algorithm O(n), single thread
+    oldMerge<T>(info);
+
+}
+
+template<class T>
+void MulThdMgSort<T>::sortByNewMg() {
     pthread_t pid;
     auto info = mInfo<std::vector<T>>(0, MulThdMgSort<T>::getLength(), v);
-    pthread_create(&pid, NULL, mergeSort<T>, (void*) &info);
+    pthread_create(&pid, NULL, mergeSortByNewMg<T>, (void*) &info);
+    void *status;
+    pthread_join(pid, &status);
+    return;
+}
+
+template<class T>
+void MulThdMgSort<T>::sortByOldMg() {
+    pthread_t pid;
+    auto info = mInfo<std::vector<T>>(0, MulThdMgSort<T>::getLength(), v);
+    pthread_create(&pid, NULL, mergeSortByOldMg<T>, (void*) &info);
     void *status;
     pthread_join(pid, &status);
     return;

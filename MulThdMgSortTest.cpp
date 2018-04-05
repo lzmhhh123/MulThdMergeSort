@@ -16,7 +16,7 @@ int main() {
     // int l(0), r(mtms.getLength());
     // pthread_create(&pid, NULL, mtms.sort, l, r);
     // pthread_join(pid, &status);
-    mtms.sort();
+    mtms.sortByNewMg();
     mtms.print();
     return 0;
 }
