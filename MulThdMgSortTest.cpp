@@ -9,8 +9,8 @@
 using namespace std;
 
 int main() {
-    double s[20] = {123, 434, 31231, 222, 111};
-    MulThdMgSort<double> mtms(5, s);
+    int s[20] = {434, 31231, 222, 111, 123, 1, 200, 12345};
+    MulThdMgSort<int> mtms(8, s);
     // pthread_t pid;
     // void *status;
     // int l(0), r(mtms.getLength());

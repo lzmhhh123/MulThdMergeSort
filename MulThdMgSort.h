@@ -28,7 +28,6 @@ public:
     int getLength();
 };
 
-
 template<class T>
 MulThdMgSort<T>::MulThdMgSort(size_t len, T *array) {
     length = len;
@@ -39,9 +38,10 @@ MulThdMgSort<T>::MulThdMgSort(size_t len, T *array) {
 }
 
 template<class T>
-void* mergeSort(void* info) {
+void* newMerge(void* info) {
     auto arg = (mInfo<std::vector<T> >*)(info);
     int l = arg->l, r = arg->r;
+    int mid = (l + r) >> 1;
     auto &v = arg->v;
     if (r - l == 1) {
         return NULL;
@@ -50,17 +50,47 @@ void* mergeSort(void* info) {
         return NULL;
     }
 
-    int mid = (l + r) >> 1;
-    pthread_t tid1, tid2;
-    auto info1 = mInfo<std::vector<T>>(l, mid, v);
-    auto info2 = mInfo<std::vector<T>>(mid, r, v);
-    pthread_create(&tid1, NULL, mergeSort<T>, (void*) &info1);
-    pthread_create(&tid2, NULL, mergeSort<T>, (void*) &info2);
+    std::vector<T>left, right;
+    left.resize(mid - l);
+    right.resize(r - mid);
+    int k1 = 0, k2 = 0;
+    for (int i = l; i < r; i += 2) left[k1++] = v[i];
+    for (int i = l+1; i < r; i += 2) right[k2++] = v[i];
+    for (int i = 0; i < k1; ++i) v[l+i] = left[i];
+    for (int i = 0; i < k2; ++i) v[l+k1+i] = right[i];
 
+    pthread_t tid1, tid2;
+    auto info1 = mInfo<std::vector<T>>(l, l+k1, v);
+    auto info2 = mInfo<std::vector<T>>(l+k1, r, v);
+    pthread_create(&tid1, NULL, newMerge<T>, (void *) &info1);
+    pthread_create(&tid2, NULL, newMerge<T>, (void *) &info2);
+    
     void *status1, *status2;
     pthread_join(tid1, &status1);
     pthread_join(tid2, &status2);
 
+    k1 = 0, k2 = 0;
+    for (int i = l; i < mid; ++i) left[k1++] = v[i];
+    for (int i = mid; i < r; ++i) right[k2++] = v[i];
+    k1 = 0, k2 = 0;
+    for (int i = l; i < r; i += 2) v[i] = left[k1++];
+    for (int i = l+1; i < r; i += 2) v[i] = right[k2++];
+
+    for (int i = l+1; i < r - 1; i += 2) {
+        if (v[i] > v[i+1]) {
+            std::swap(v[i], v[i+1]);
+        }
+    }
+
+    return NULL;
+}
+
+template<class T>
+void oldMerge(void* info) {
+    auto arg = (mInfo<std::vector<T> >*)(info);
+    int l = arg->l, r = arg->r;
+    int mid = (l + r) >> 1;
+    auto &v = arg->v;
     std::vector<T>left, right;
     left.resize(mid - l);
     right.resize(r - mid);
@@ -79,7 +109,41 @@ void* mergeSort(void* info) {
     }
     while (i < mid-l) v[k++] = left[i++];
     while (j < r-mid) v[k++] = right[j++];
+}
 
+template<class T>
+void* mergeSort(void* info) {
+    auto arg = (mInfo<std::vector<T> >*)(info);
+    int l = arg->l, r = arg->r;
+    int mid = (l + r) >> 1;
+    auto &v = arg->v;
+    if (r - l == 1) {
+        return NULL;
+    } else if (r - l == 2) {
+        if (v[l] > v[l + 1]) std::swap(v[l], v[l + 1]);
+        return NULL;
+    }
+
+    pthread_t tid1, tid2;
+    auto info1 = mInfo<std::vector<T>>(l, mid, v);
+    auto info2 = mInfo<std::vector<T>>(mid, r, v);
+    pthread_create(&tid1, NULL, mergeSort<T>, (void*) &info1);
+    pthread_create(&tid2, NULL, mergeSort<T>, (void*) &info2);
+
+    void *status1, *status2;
+    pthread_join(tid1, &status1);
+    pthread_join(tid2, &status2);
+
+    // old merge algorithm O(n), single thread
+
+    // oldMerge<T>(info);
+
+    // new merge algorithm O(nlogn), multiple threads
+    pthread_t sid;
+    pthread_create(&sid, NULL, newMerge<T>, info);
+    void *status;
+    pthread_join(sid, &status);
+    
 }
 
 template<class T>
