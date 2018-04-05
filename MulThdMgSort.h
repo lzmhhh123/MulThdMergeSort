@@ -1,4 +1,7 @@
+#include <cstdio>
 #include <vector>
+#include <iostream>
+#include <pthread.h>
 
 template<class T>
 struct mInfo{
