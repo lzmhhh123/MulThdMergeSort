@@ -8,15 +8,23 @@
 
 using namespace std;
 
+int s[100010];
 int main() {
-    int s[20] = {434, 31231, 222, 111, 123, 1, 200, 12345};
-    MulThdMgSort<int> mtms(8, s);
+    freopen("data.in", "r" ,stdin);
+    int n;
+    cin >> n;
+    for (int i = 0; i < n; ++i) {
+        scanf("%d\n", s+i);
+    }
+    printf("Read data successfully.\n");
+    MulThdMgSort<int> mtms(n, s);
+    printf("Generate class successfully.\n");
     // pthread_t pid;
     // void *status;
     // int l(0), r(mtms.getLength());
     // pthread_create(&pid, NULL, mtms.sort, l, r);
     // pthread_join(pid, &status);
-    mtms.sortByNewMg();
+    mtms.sortByOldMg();
     mtms.print();
     return 0;
 }
